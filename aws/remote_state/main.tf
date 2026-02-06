@@ -16,7 +16,9 @@ terraform {
 # CONFIGURE OUR AWS CONNECTION
 # ------------------------------------------------------------------------------
 
-provider "aws" {}
+provider "aws" {
+  region = "us-west-2"
+}
 
 # ------------------------------------------------------------------------------
 # CREATE THE S3 BUCKET
@@ -29,13 +31,24 @@ locals {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  # With account id, this S3 bucket names can be *globally* unique.
   bucket = "${local.account_id}-terraform-states"
 
-  # Enable versioning so we can see the full revision history of our
-  # state files
-  versioning {
-    enabled = true
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "terraform_state_versioning" {
+  bucket = aws_s3_bucket.terraform_state.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
   }
 
   # Enable server-side encryption by default
